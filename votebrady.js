@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Brady Voter 9000
 // @namespace   org.fixnum.bradyvoter
-// @include     http://www.radiotimes.com/news/
+// @include     http://www.radiotimes.com/news/*
 // @version     1
 // @grant       none
 // ==/UserScript==
