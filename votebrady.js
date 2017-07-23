@@ -1,16 +1,28 @@
 // ==UserScript==
 // @name        Brady Voter 9000
 // @namespace   org.fixnum.bradyvoter
-// @include     http://www.radiotimes.com/news/2017-07-21/radio-times-radio-and-podcast-champion-round-4-5
+// @include     http://www.radiotimes.com/news/
 // @version     1
 // @grant       none
 // ==/UserScript==
+
+var voteCount = 0;
+
 function click(elem) {
-    var click = document.createEvent("MouseEvents");
-    click.initMouseEvent("click", true, true, window,
-        0, 0, 0, 0, 0, false, false, false, false, 0, null);
-    elem.dispatchEvent(click);
-    elem.focus();
+    if (elem.fireEvent) {
+        elem.fireEvent('onclick');
+    } else {
+        var click = document.createEvent("MouseEvents");
+        click.initMouseEvent("click", true, true, window,
+            0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        elem.dispatchEvent(click);
+        elem.focus();
+        
+        var evObj = document.createEvent('Events');
+        evObj.initEvent("click", true, false);
+        evObj.which = elem;
+        elem.dispatchEvent(evObj);
+    }
 }
 
 function voteBrady() {
@@ -19,7 +31,8 @@ function voteBrady() {
 
     var return_button = document.getElementsByClassName("pds-return-poll")[0];
     if (return_button != null) {
-        unsafeWindow.console.log("Clicking return to poll.");
+        voteCount += 1;
+        unsafeWindow.console.log("Clicking return to poll, voted " + voteCount + " times so far.");
         click(return_button);
         done = true;
     }
@@ -32,7 +45,6 @@ function voteBrady() {
 
             if (l.textContent == "Brady Haran") {
                 var radioID = l.getAttribute("for");
-                unsafeWindow.console.log("Brady's radio button is " + radioID);
                 var radio = document.getElementById(radioID);
                 if (!radio.checked) {
                     unsafeWindow.console.log("Clicking Brady's label.");
@@ -49,6 +61,9 @@ function voteBrady() {
                             done = true;
                         }
                     }
+                    if (! done) {
+                        unsafeWindow.console.log("Didn't find vote button.");
+                    }
                 }
             }
         }
@@ -62,4 +77,4 @@ function voteBrady() {
 }
 
 unsafeWindow.console.log("Vote go!");
-window.setTimeout(voteBrady, 5000);
+window.setTimeout(voteBrady, 1500);
