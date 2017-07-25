@@ -27,7 +27,7 @@ function click(elem) {
 
 function voteBrady() {
     var done = false;
-    var sleep_time = 500;
+    var sleep_time = 3000;
 
     var return_button = document.getElementsByClassName("pds-return-poll")[0];
     if (return_button != null) {
