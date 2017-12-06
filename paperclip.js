@@ -8,12 +8,37 @@
 // @grant        none
 // ==/UserScript==
 
-function createLog() {
+function checkBox(id, label_text) {
+    var p = document.createElement('p');
+    var cb = document.createElement('input');
+    var label = document.createElement('label');
+    cb.type = "checkbox";
+    cb.checked = true;
+    cb.id = id;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(label_text));
+    p.appendChild(label);
+    return p;
+}
+
+function createInterface() {
     var console = elem("consoleDiv");
+    var botDiv = document.createElement('div');
+    botDiv.id = 'botDiv';
+    botDiv.style.float = 'right';
+    botDiv.style.width = '30%';
+
+    botDiv.appendChild(checkBox('adjustPrice', 'Automatically adjust prices'));
+    botDiv.appendChild(checkBox('buyWire', 'Automatically buy wire at good prices'));
+    botDiv.appendChild(checkBox('runTournaments', 'Run tournaments and pick winners'));
+    botDiv.appendChild(checkBox('adjustSwarm', 'Tune swarm computing for maximum production'));
+
     var botLog = document.createElement('p');
     botLog.className = "consoleOld";
     botLog.id = "botLog";
-    console.appendChild(botLog);
+    botDiv.appendChild(botLog);
+
+    elem('page').appendChild(botDiv);
 }
 
 function log(msg) {
@@ -25,8 +50,8 @@ function log(msg) {
     var message = ts + msg;
     var console = elem("botLog");
     var msgs = console.innerHTML.split("<br>");
-    if(msgs.length > 15) {
-        msgs = msgs.slice(msgs.length - 15);
+    if(msgs.length > 30) {
+        msgs = msgs.slice(msgs.length - 30);
     }
     msgs.push(message);
     console.innerHTML = msgs.join("<br>");
@@ -80,8 +105,14 @@ function makePaperclip(repeatTime=0) {
 
 var wireLow = 16;
 function buyWire() {
+    if (! elem('buyWire').checked) {
+        setTimeout(buyWire, 100);
+        return;
+    }
     if (!isManufacturing()) {
         log("No longer manufacturing, giving up on buying wire.");
+        elem('buyWire').checked = false;
+        elem('buyWire').disabled = true;
         return;
     }
     var btn = elem("btnBuyWire");
@@ -102,8 +133,14 @@ function buyWire() {
 }
 
 function adjustPrice() {
+    if (! elem('adjustPrice').checked) {
+        setTimeout(adjustPrice, 100);
+        return;
+    }
     if (!isInBusiness()) {
         log("No longer doing business, giving up on selling paperclips.");
+        elem('adjustPrice').checked = false;
+        elem('adjustPrice').disabled = true;
         return;
     }
     var unsoldStock = parseNumericValue(elem("unsoldClips"));
@@ -204,16 +241,25 @@ function waitForSpace() {
     if (!isDesigningProbe()) {
         setTimeout(waitForSpace, 1000);
     } else {
-        runTournaments();
+        elem('runTournaments').checked = true;
     }
 }
 
 function runTournaments() {
-    if (!isInBusiness() && !isDesigningProbe()) {
-        log("Yomi is no longer needed, pausing up on tournaments.");
-        waitForSpace();
+    if (! elem('runTournaments').checked) {
+        setTimeout(runTournaments, 100);
         return;
     }
+
+    var yomiCount = parseNumericValue(elem('yomiDisplay'));
+    if (!isInBusiness() && !isDesigningProbe() && yomiCount > 1000000) {
+        log("Yomi is no longer needed, pausing tournaments.");
+        elem('runTournaments').checked = false;
+        waitForSpace();
+        setTimeout(runTournaments, 100);
+        return;
+    }
+
     var tournamentAvailable = ! elem("btnNewTournament").disabled;
     var runAvailable = ! elem("btnRunTournament").disabled;
     if(tournamentAvailable) {
@@ -261,7 +307,7 @@ function autoTuneSwarm() {
 }
 
 function init() {
-    createLog();
+    createInterface();
     log("Initializing bot.");
     buyWire();
     adjustPrice();
