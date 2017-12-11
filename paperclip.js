@@ -13,7 +13,7 @@ function checkBox(id, label_text) {
     var cb = document.createElement('input');
     var label = document.createElement('label');
     cb.type = "checkbox";
-    cb.checked = true;
+    cb.checked = false;
     cb.id = id;
     label.appendChild(cb);
     label.appendChild(document.createTextNode(label_text));
@@ -26,11 +26,17 @@ function createInterface() {
     var botDiv = document.createElement('div');
     botDiv.id = 'botDiv';
     botDiv.style.float = 'right';
-    botDiv.style.width = '30%';
+    botDiv.style.width = '40%';
 
+    botDiv.appendChild(checkBox('makePaperclip', 'Automatically make single paperclips'));
     botDiv.appendChild(checkBox('adjustPrice', 'Automatically adjust prices'));
-    botDiv.appendChild(checkBox('buyWire', 'Automatically buy wire at good prices'));
+    botDiv.appendChild(checkBox('buyWire', 'Buy wire at good prices'));
+    botDiv.appendChild(checkBox('expandMem', 'Automatically expand memory'));
+    botDiv.appendChild(checkBox('expandProc', 'Automatically expand processors'));
+    botDiv.appendChild(checkBox('computeOps', 'Quantum computer sysadmin'));
     botDiv.appendChild(checkBox('runTournaments', 'Run tournaments and pick winners'));
+    botDiv.appendChild(checkBox('depositFunds', 'Invest savings'));
+    botDiv.appendChild(checkBox('withdrawFunds', 'Withdraw all funds from the investment bank'));
     botDiv.appendChild(checkBox('adjustSwarm', 'Tune swarm computing for maximum production'));
 
     var botLog = document.createElement('p');
@@ -51,9 +57,9 @@ function log(msg) {
     var console = elem("botLog");
     var msgs = console.innerHTML.split("<br>");
     if(msgs.length > 30) {
-        msgs = msgs.slice(msgs.length - 30);
+        msgs = msgs.slice(0, 30);
     }
-    msgs.push(message);
+    msgs = [message].concat(msgs);
     console.innerHTML = msgs.join("<br>");
 }
 
@@ -73,9 +79,26 @@ function isInBusiness() {
     return elem("businessDiv").style.display != "none";
 }
 
+function isInvesting() {
+    return elem("investmentEngine").style.display != "none";
+}
+
 function isDesigningProbe() {
     return elem("probeDesignDiv").style.display != "none";
 }
+
+function canRunTournament() {
+    return elem("strategyEngine").style.display != "none";
+}
+
+function hasSwarm() {
+    return elem("swarmEngine").style.display != "none";
+}
+
+function hasQuantumComputer() {
+    return elem("qComputing").style.display != "none";
+}
+
 
 function click(elem) {
     if (elem.fireEvent) {
@@ -94,19 +117,24 @@ function click(elem) {
     }
 }
 
-function makePaperclip(repeatTime=0) {
-    //var btn = elem("btnMakePaperclip");
-    //click(btn);
-    clipClick(1);
-    if(repeatTime) {
-         setTimeout(function(){ makePaperclip(repeatTime); }, repeatTime);
+function makePaperclip() {
+    if (! elem('makePaperclip').checked) {
+        setTimeout(makePaperclip, 1000);
+        return;
     }
+    var unsoldStock = parseNumericValue(elem("unsoldClips"));
+    if (unsoldStock > 2000) {
+        elem('makePaperclip').checked = false;
+        log("No point in making paperclips by hand anymore, giving up.");
+    }
+    clipClick(1);
+    setTimeout(makePaperclip, 200);
 }
 
 var wireLow = 16;
-function buyWire() {
+function buyWire_() {
     if (! elem('buyWire').checked) {
-        setTimeout(buyWire, 100);
+        setTimeout(buyWire_, 100);
         return;
     }
     if (!isManufacturing()) {
@@ -115,21 +143,24 @@ function buyWire() {
         elem('buyWire').disabled = true;
         return;
     }
+    var repeatTime = 500;
     var btn = elem("btnBuyWire");
     var wireLeft = parseNumericValue(elem("wire"));
     var wirePrice = parseNumericValue(elem("wireCost"));
     var wireRate = parseNumericValue(elem("clipmakerRate"));
     var secondsLeft = wireLeft / wireRate;
     if (! btn.disabled) {
-        if (secondsLeft < 120 && wirePrice < wireLow) {
-            log("Only " + secondsLeft + " seconds of wire left and price is lower than target of $ " + wireLow +
-                " - automatically buying wire for $" + wirePrice);
+        if (secondsLeft < 120 && wirePrice < wireLow * 0.9) {
             //click(btn);
+            buyWire();
+            repeatTime = 10;
+        } else if (secondsLeft < 5 || wireLeft < 250) {
+            //log("Only " + secondsLeft + " seconds of wire left - automatically buying wire for $" + wirePrice);
             buyWire();
         }
     }
     wireLow = (wireLow * 0.985 + wirePrice * 0.015);
-    setTimeout(buyWire, 100);
+    setTimeout(buyWire_, repeatTime);
 }
 
 function adjustPrice() {
@@ -178,6 +209,19 @@ function adjustPrice() {
 }
 
 function computeOps() {
+    var checkbox = elem('computeOps');
+    if (hasQuantumComputer() && checkbox.disabled) {
+        log("Unlocking computer automation.");
+        checkbox.disabled = false;
+    }
+    if (!hasQuantumComputer() && !checkbox.disabled) {
+        log("No quantum computer available.");
+        checkbox.disabled = true;
+    }
+    if (! checkbox.checked) {
+        setTimeout(computeOps, 100);
+        return;
+    }
     var opacity = 0;
     for (var chip = 0; chip < 10; chip++) {
         var chipId = "qChip" + chip;
@@ -195,12 +239,14 @@ function updateStrats() {
     for(var i = 0; i < 8; i++) {
         var res = elem("results" + i).innerText;
         var name_and_score = res.split(".")[1];
-        var name = name_and_score.split(":")[0].trim();
-        var score = parseInt(name_and_score.split(":")[1].trim());
-        if (! strats[name]) {
-            strats[name] = 0;
+        if (name_and_score) {
+            var name = name_and_score.split(":")[0].trim();
+            var score = parseInt(name_and_score.split(":")[1].trim());
+            if (! strats[name]) {
+                strats[name] = 0;
+            }
+            strats[name] += score;
         }
-        strats[name] += score;
     }
 }
 
@@ -246,7 +292,16 @@ function waitForSpace() {
 }
 
 function runTournaments() {
-    if (! elem('runTournaments').checked) {
+    var checkbox = elem("runTournaments");
+    if (canRunTournament() && checkbox.disabled) {
+        log("Unlocking tournament automation.");
+        checkbox.disabled = false;
+    }
+    if (!canRunTournament() && !checkbox.disabled) {
+        log("No tournament engine available.");
+        checkbox.disabled = true;
+    }
+    if (! checkbox.checked) {
         setTimeout(runTournaments, 100);
         return;
     }
@@ -284,40 +339,131 @@ function startAutoTuneSwarm() {
 }
 
 function autoTuneSwarm() {
-    var planetDepleted = elem("availableMatterDisplay").innerText == "0";
-    var outOfMatter = elem("acquiredMatterDisplay").innerText == "0";
-    var outOfWire = elem("nanoWire").innerText == "0";
-    var slider = elem("slider");
-    var value = parseInt(slider.value);
-    var min = parseInt(slider.min);
-    var max = parseInt(slider.max);
+    var swarmBox = elem("adjustSwarm");
+    if (hasSwarm() && swarmBox.disabled) {
+        log("Swarm created - unlocking swarm tuning.");
+        swarmBox.disabled = false;
+    }
+    if (!hasSwarm() && !swarmBox.disabled) {
+        log("No swarm active - locking swarm tuning.");
+        swarmBox.disabled = true;
+    }
+    if (swarmBox.checked) {
+        var amountOfNanoWire = elem("nanoWire").innerText;
+        var planetDepleted = elem("availableMatterDisplay").innerText == "0" && elem("acquiredMatterDisplay").innerText == "0";
+        var outOfMatter = elem("acquiredMatterDisplay").innerText == "0";
+        var outOfWire = amountOfNanoWire == "0" ||
+            amountOfNanoWire.indexOf(" billion ") >= 0  ||
+            amountOfNanoWire.indexOf(" trillion ") >= 0;
+        var productionBalanced = amountOfNanoWire.indexOf(" quadrillion ") >= 0;
+        var slider = elem("slider");
+        var value = parseInt(slider.value);
+        var min = parseInt(slider.min) + 15;
+        var max = parseInt(slider.max);
 
-    if (planetDepleted) {
-        slider.value = max;
-    } else if (/*outOfMatter ||*/ outOfWire) {
-        if (value > min) {
-            slider.value = value - 1;
-        }
-    } else {
-        if (value < max) {
-            slider.value = value + 1;
+        if (planetDepleted) {
+            if (value < max) {
+                slider.value = value + 1;
+            }
+        } else if (/*outOfMatter ||*/ outOfWire) {
+            if (value > min) {
+                slider.value = value - 1;
+            }
+        } else if(!productionBalanced) {
+            if (value < max) {
+                slider.value = value + 1;
+            }
         }
     }
-    setTimeout(autoTuneSwarm, 150);
+    setTimeout(autoTuneSwarm, 100);
+}
+
+var withdrawingFunds = false;
+function hedgeFundManager() {
+    var repeatTime = 1000;
+    var withdrawBox = elem('withdrawFunds');
+    var depositBox = elem('depositFunds');
+    if (isInvesting()) {
+        if (withdrawBox.disabled) {
+            log("Investment bank is available, enabling investment options.");
+            withdrawBox.disabled = false;
+            depositBox.disabled = false;
+        }
+        if (depositBox.checked && withdrawBox.checked) {
+            if(withdrawingFunds) {
+                log("Cannot withdraw and deposit at the same time, stopping withdrawal");
+                withdrawBox.checked = false;
+            } else {
+                log("Cannot withdraw and deposit at the same time, stopping deposits");
+                depositBox.checked = false;
+            }
+        }
+        withdrawingFunds = withdrawBox.checked;
+        if (withdrawBox.checked) {
+            investWithdraw();
+            repeatTime = 100;
+        }
+        if (depositBox.checked) {
+            investDeposit();
+            repeatTime = 10000;
+        }
+    } else if (!withdrawBox.disabled) {
+        log("Investment bank is not available, disabling investment options.");
+        withdrawBox.checked = false;
+        withdrawBox.disabled = true;
+        depositBox.checked = false;
+        depositBox.disabled = true;
+        repeatTime = 1000;
+    }
+    setTimeout(hedgeFundManager, repeatTime);
+}
+
+function expandComputer() {
+    var procButton = elem("btnAddProc");
+    var memButton = elem("btnAddMem");
+    var repeatTime = 1000;
+    var procBox = elem('expandProc');
+    var memBox = elem('expandMem');
+    if (hasQuantumComputer() && procBox.disabled) {
+        log("Unlocking computer expansion.");
+        procBox.disabled = false;
+        memBox.disabled = false;
+    }
+    if (!hasQuantumComputer() && !procBox.disabled) {
+        procBox.disabled = true;
+        memBox.disabled = true;
+    }
+
+    if(elem("expandMem").checked) {
+        if(!memButton.disabled) {
+            repeatTime = 30;
+            addMem();
+        }
+    }
+
+    if(elem("expandProc").checked) {
+        if(!procButton.disabled) {
+            repeatTime = 30;
+            addProc();
+        }
+    }
+    setTimeout(expandComputer, repeatTime);
 }
 
 function init() {
     createInterface();
     log("Initializing bot.");
-    buyWire();
+    makePaperclip();
+    buyWire_();
     adjustPrice();
     computeOps();
+    expandComputer();
     runTournaments();
+    hedgeFundManager();
     startAutoTuneSwarm();
 }
 
 (function() {
     'use strict';
     setTimeout(init, 8000);
-    //makePaperclip(200);
 })();
