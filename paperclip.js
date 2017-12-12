@@ -352,10 +352,7 @@ function autoTuneSwarm() {
         var amountOfNanoWire = elem("nanoWire").innerText;
         var planetDepleted = elem("availableMatterDisplay").innerText == "0" && elem("acquiredMatterDisplay").innerText == "0";
         var outOfMatter = elem("acquiredMatterDisplay").innerText == "0";
-        var outOfWire = amountOfNanoWire == "0" ||
-            amountOfNanoWire.indexOf(" billion ") >= 0  ||
-            amountOfNanoWire.indexOf(" trillion ") >= 0;
-        var productionBalanced = amountOfNanoWire.indexOf(" quadrillion ") >= 0;
+        var outOfWire = amountOfNanoWire == "0";
         var slider = elem("slider");
         var value = parseInt(slider.value);
         var min = parseInt(slider.min) + 15;
@@ -369,7 +366,7 @@ function autoTuneSwarm() {
             if (value > min) {
                 slider.value = value - 1;
             }
-        } else if(!productionBalanced) {
+        } else {
             if (value < max) {
                 slider.value = value + 1;
             }
