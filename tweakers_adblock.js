@@ -8,13 +8,21 @@
 // @grant GM_log
 // ==/UserScript==
 
-function removeTweets() {
+function removeAds() {
   var divs = document.getElementsByTagName("div");
   var removed = 0;
   for(idx = 0; idx < divs.length; idx++) {
     var div = divs[idx];
     if(div.hasAttribute("data-google-query-id") && div.style.display != "none") {
       div.style.display = "none";
+      removed += 1;
+    }
+  }
+  var iframes = document.getElementsByTagName("iframe");
+  for(idx = 0; idx < iframes.length; idx++) {
+    var iframe = iframes[idx];
+    if(iframe.src.startsWith("https://media.adrcdn.com/ads/") && iframe.style.display != "none") {
+      iframe.style.display = "none";
       removed += 1;
     }
   }
@@ -31,4 +39,5 @@ function removeTweets() {
   window.setTimeout(removeTweets, 1000);
 }
 
-removeTweets();
+removeAds();
+
