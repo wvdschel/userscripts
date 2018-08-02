@@ -11,7 +11,7 @@
 function removeAds() {
   var divs = document.getElementsByTagName("div");
   var removed = 0;
-  for(idx = 0; idx < divs.length; idx++) {
+  for(var idx = 0; idx < divs.length; idx++) {
     var div = divs[idx];
     if(div.hasAttribute("data-google-query-id") && div.style.display != "none") {
       div.style.display = "none";
@@ -36,7 +36,7 @@ function removeAds() {
     }
   }
   // if (removed > 0) alert("Removed " + removed + " advertisement tweets.");
-  window.setTimeout(removeTweets, 1000);
+  window.setTimeout(removeAds, 1000);
 }
 
 removeAds();
