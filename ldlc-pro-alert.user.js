@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name        Alert when available - ldlc.com
+// @name        Alert when available - ldlc-pro.com
 // @namespace   Violentmonkey Scripts
-// @match       https://www.ldlc.com/fr-be/informatique/pieces-informatique/carte-graphique-interne/*
+// @match       https://www.ldlc-pro.be/pieces/carte-graphique/*
 // @grant       GM_log
 // @grant       GM_openInTab
 // @grant       GM_notification
@@ -29,20 +29,19 @@ function playSound() {
 
 function checkPage() {
   "use strict"
-  var products = document.getElementsByClassName("pdt-item");
+  var products = document.getElementsByTagName("tr");
   var availableProducts = [];
   for (var product of products) {
-    var titleElems = product.getElementsByClassName("title-3");
+    var titleElems = product.getElementsByTagName("h3");
     var productName = "NO PRODUCT NAME";
     if (titleElems.length >= 1) {
       productName = titleElems[0].innerText;
     }
-    //var buyButtons = product.getElementsByClassName("stock-2");
-    var buyButtons = product.getElementsByTagName("span");
+    var buyButtons = product.getElementsByTagName("img");
     var found = false;
     if (buyButtons.length >= 1) {
       for (var buyButton of buyButtons) {
-        var text = buyButton.innerText.replace(/\s/g, " ").toLowerCase();
+        var text = buyButton.title.replace(/\s/g, " ").toLowerCase();
         if (text.includes("en stock")) {
           found = true;
           break;
